@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Tasks</title>
+    </head>
+    <body>
+        <h1>Tasks</h1>
+
+        <p>
+            Total tasks:
+            {% if is_paginated %}
+                {{ page_obj.paginator.count }}
+            {% else %}
+                {{ tasks|length }}
+            {% endif %}
+            &nbsp;|&nbsp; Per page:
+            {% if is_paginated %}
+                {{ page_obj.paginator.per_page }}
+            {% else %}
+                {{ tasks|length }}
+            {% endif %}
+        </p>
+
+        <form method="get">
+            Order:
+            <select name="order" onchange="this.form.submit()">
+                {% for o in order_options %}
+                    <option value="{{ o }}" {% if request.GET.order == o %}selected{% endif %}>{{ o }}</option>
+                {% endfor %}
+            </select>
+            Limit:
+            <input type="number" name="limit" min="1" max="200" value="{{ request.GET.limit|default:25 }}">
+            <button type="submit">Apply</button>
+        </form>
+
+        <table border="1" cellpadding="6">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tasks %}
+                    <tr>
+                        <td>{{ t.testid }}</td>
+                        <td>{{ t.testname }}</td>
+                        <td>{{ t.status_label }}</td>
+                        <td>
+                            <a href="{% url 'task_edit' t.testid %}">Edit</a>
+                            {% if t.status == 2 %}
+                                | <a href="{% url 'task_results' t.testid %}">Results</a>
+                            {% else %}
+                                | <span style="color:#888">Results unavailable</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4">No records</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div>
+            {% if is_paginated %}
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&order={{ request.GET.order }}&limit={{ request.GET.limit }}">Prev</a>
+                {% endif %}
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&order={{ request.GET.order }}&limit={{ request.GET.limit }}">Next</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </body>
+</html>
