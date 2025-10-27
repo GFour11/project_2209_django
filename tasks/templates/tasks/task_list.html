@@ -34,6 +34,8 @@
             <button type="submit">Apply</button>
         </form>
 
+        {% load dict_extras %}
+
         <table border="1" cellpadding="6">
             <thead>
                 <tr>
@@ -56,6 +58,44 @@
                             {% else %}
                                 | <span style="color:#888">Results unavailable</span>
                             {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" style="background:#fafafa;">
+                            <details>
+                                <summary><strong>All fields for task #{{ t.testid }}</strong></summary>
+                                <div style="margin-top:8px;">
+                                    {% fields_for t as fields %}
+                                    <table border="1" cellpadding="6">
+                                        <thead>
+                                            <tr>
+                                                <th>Field</th>
+                                                <th>DB column</th>
+                                                <th>Type</th>
+                                                <th>Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for f in fields %}
+                                                <tr>
+                                                    <td><code>{{ f.name }}</code></td>
+                                                    <td><code>{{ f.db_column }}</code></td>
+                                                    <td>{{ f.type }}</td>
+                                                    <td>
+                                                        {% with val=t|attr:f.attname %}
+                                                            {% if val is not none %}
+                                                                {{ val }}
+                                                            {% else %}
+                                                                &mdash;
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </details>
                         </td>
                     </tr>
                 {% empty %}

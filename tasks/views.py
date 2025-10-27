@@ -15,6 +15,25 @@ STATUS = {
     4: 'failed'
 }
 
+ORDER_OPTIONS = ["testid", "-testid", "testname", "-testname", "status", "-status"]
+
+
+def serialize_model_fields(instance):
+    """
+    Return a list of dicts describing all concrete fields of a model instance:
+    Python field name, DB column, Django type, and current value.
+    """
+    items = []
+    opts = instance._meta
+    for f in opts.fields:
+        items.append({
+            "name": f.name,
+            "db_column": (f.db_column or f.column),
+            "type": f.get_internal_type(),
+            "value": getattr(instance, f.attname, None),
+        })
+    return items
+
 
 class TaskListView(ListView):
     model = TestsTodo
@@ -59,6 +78,7 @@ class TaskListView(ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['STATUS'] = STATUS
+        ctx['order_options'] = ORDER_OPTIONS
         return ctx
 
 
@@ -70,15 +90,13 @@ class TaskUpdateView(UpdateView):
     def form_valid(self, form):
         with transaction.atomic():
             task = form.save(commit=False)
-
             task.status = 0
             task.save()
-
             self._delete_previous_results(task)
-
         return redirect('task_list')
 
-    def _delete_previous_results(self, task: TestsTodo):
+    @staticmethod
+    def _delete_previous_results(task: TestsTodo):
         if hasattr(TradeResults, 'test_id'):
             TradeResults.objects.filter(test_id=task.testid).delete()
             return
@@ -92,7 +110,7 @@ class TaskResultsView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        task = TestsTodo.objects.get(pk=self.kwargs["pk"])
+        task = TestsTodo.objects.get(pk=self.kwargs['pk'])
         if task.status != 2:
             raise Http404('Results are only available for completed tasks')
 
@@ -122,5 +140,6 @@ class TaskResultsView(TemplateView):
             'task': task,
             'trade_result': tr,
             'daily_profits': daily,
+            'todo_fields': serialize_model_fields(task),
         })
         return ctx

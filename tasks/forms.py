@@ -1,16 +1,12 @@
 from django import forms
 from .models import TestsTodo
 
-EDITABLE_FIELDS = [
-    # add right there fields which have to be edit
-    'testname',
-    'underlying',
-    'startingfunds',
-    'allocationpercentage',
-    'maxopentrades',
-]
-
 class TaskForm(forms.ModelForm):
     class Meta:
         model = TestsTodo
-        fields = EDITABLE_FIELDS
+        exclude = ['testid']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'status' in self.fields:
+            self.fields['status'].disabled = True

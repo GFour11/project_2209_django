@@ -8,6 +8,40 @@
         <h1>Edit Task #{{ object.testid }}</h1>
         <p><strong>Current status:</strong> {{ object.status }}</p>
 
+        {% load dict_extras %}
+
+        <h2>Task fields (TestsTodo)</h2>
+        {% fields_for object as fields %}
+        <table border="1" cellpadding="6">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>DB column</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in fields %}
+                    <tr>
+                        <td><code>{{ f.name }}</code></td>
+                        <td><code>{{ f.db_column }}</code></td>
+                        <td>{{ f.type }}</td>
+                        <td>
+                            {% with val=object|attr:f.attname %}
+                                {% if val is not none %}
+                                    {{ val }}
+                                {% else %}
+                                    &mdash;
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Edit</h2>
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
