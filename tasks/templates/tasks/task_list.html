@@ -1,121 +1,190 @@
 <!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>Tasks</title>
-    </head>
-    <body>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #f0b90b;
+            --text-color: #e0e0e0;
+            --text-secondary: #888;
+            --border-color: #333;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --danger-color: #dc3545;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container { max-width: 900px; margin: 40px auto; padding: 20px; }
+        h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
+
+        .task-summary { background-color: var(--surface-color); border-radius: 8px; padding: 15px 20px; margin-bottom: 25px; display: flex; gap: 20px; justify-content: flex-start; flex-wrap: wrap; }
+        .task-summary p { margin: 0; color: var(--text-secondary); font-size: 0.95rem; }
+        .task-summary strong { color: var(--text-color); }
+
+        .filter-form { background-color: var(--surface-color); border-radius: 8px; padding: 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .filter-form label { font-weight: 600; color: var(--text-color); margin-right: 5px; }
+        .filter-form select, .filter-form input[type="number"] { background-color: #333; border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-color); padding: 8px 12px; font-size: 0.9rem; appearance: none; outline: none; transition: border-color 0.2s; }
+        .filter-form select:focus, .filter-form input[type="number"]:focus { border-color: var(--primary-color); }
+        .filter-form button { background-color: var(--primary-color); color: var(--bg-color); border: none; border-radius: 4px; padding: 8px 15px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s, opacity 0.2s; }
+        .filter-form button:hover { background-color: #e0a800; }
+        .filter-form button:active { opacity: 0.8; }
+
+        .tasks-table-wrapper { background-color: var(--surface-color); border-radius: 8px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+        /* Убираем hover эффект для строки с details */
+        tbody tr.collapsible-row:hover { background-color: transparent; }
+        code { background-color: #333; padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; }
+
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; color: var(--bg-color); }
+        .status-badge.status-1 { background-color: var(--warning-color); }
+        .status-badge.status-2 { background-color: var(--success-color); }
+        .status-badge.status-3 { background-color: var(--danger-color); }
+        .status-badge.status-0 { background-color: var(--info-color); }
+
+        td a { color: var(--primary-color); text-decoration: none; font-weight: 600; margin-right: 10px; transition: color 0.2s; }
+        td a:hover { color: #e0a800; }
+        td .unavailable { color: var(--text-secondary); cursor: not-allowed; opacity: 0.6; margin-right: 10px; }
+
+        .collapsible-row { background-color: #262626; }
+        .collapsible-row td { padding: 0; } /* Убираем padding у ячейки-контейнера */
+        .collapsible-row summary { cursor: pointer; padding: 10px 15px; font-size: 0.95rem; font-weight: 600; list-style: none; color: var(--text-color); transition: background-color 0.2s; }
+        .collapsible-row summary:hover { background-color: #353535; }
+        .collapsible-row summary::-webkit-details-marker { display: none; }
+        .collapsible-row summary::before { content: '►'; margin-right: 0.75rem; display: inline-block; transition: transform 0.2s ease-in-out; color: var(--primary-color); }
+        .collapsible-row[open] > summary::before { transform: rotate(90deg); }
+        .collapsible-row .details-content { padding: 15px; border-top: 1px solid var(--border-color); }
+
+        /* --- ИСПРАВЛЕНИЕ: НОВЫЕ СТИЛИ ДЛЯ ВЕРТИКАЛЬНОГО СПИСКА ДЕТАЛЕЙ --- */
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Адаптивная сетка */
+            gap: 1rem;
+        }
+        .detail-item {
+            background: #2f2f2f;
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .detail-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .detail-value {
+            font-size: 0.95rem;
+            color: var(--text-color);
+            word-break: break-all; /* Ломаем очень длинные слова, чтобы они не вылезали */
+        }
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 30px; font-size: 1rem; }
+        .pagination a { background-color: var(--primary-color); color: var(--bg-color); padding: 8px 15px; border-radius: 4px; text-decoration: none; font-weight: 600; transition: background-color 0.2s; }
+        .pagination a:hover { background-color: #e0a800; }
+        .pagination span { color: var(--text-color); font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .container { padding: 10px; margin: 10px auto; }
+            h1 { font-size: 2rem; }
+            .filter-form { flex-direction: column; align-items: stretch; }
+            .filter-form button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    {% load dict_extras %}
+
+    <main class="container">
         <h1>Tasks</h1>
 
-        <p>
-            Total tasks:
-            {% if is_paginated %}
-                {{ page_obj.paginator.count }}
-            {% else %}
-                {{ tasks|length }}
-            {% endif %}
-            &nbsp;|&nbsp; Per page:
-            {% if is_paginated %}
-                {{ page_obj.paginator.per_page }}
-            {% else %}
-                {{ tasks|length }}
-            {% endif %}
-        </p>
+        <div class="task-summary">
+            <p>Total tasks: <strong>{% if is_paginated %}{{ page_obj.paginator.count }}{% else %}{{ tasks|length }}{% endif %}</strong></p>
+            <p>Per page: <strong>{% if is_paginated %}{{ page_obj.paginator.per_page }}{% else %}{{ tasks|length }}{% endif %}</strong></p>
+        </div>
 
-        <form method="get">
-            Order:
-            <select name="order" onchange="this.form.submit()">
-                {% for o in order_options %}
-                    <option value="{{ o }}" {% if request.GET.order == o %}selected{% endif %}>{{ o }}</option>
-                {% endfor %}
+        <form method="get" class="filter-form">
+            <label for="order-select">Order:</label>
+            <select name="order" id="order-select" onchange="this.form.submit()">
+                {% for o in order_options %}<option value="{{ o }}" {% if request.GET.order == o %}selected{% endif %}>{{ o }}</option>{% endfor %}
             </select>
-            Limit:
-            <input type="number" name="limit" min="1" max="200" value="{{ request.GET.limit|default:25 }}">
+            <label for="limit-input">Limit:</label>
+            <input type="number" name="limit" id="limit-input" min="1" max="200" value="{{ request.GET.limit|default:25 }}">
             <button type="submit">Apply</button>
         </form>
 
-        {% load dict_extras %}
-
-        <table border="1" cellpadding="6">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for t in tasks %}
-                    <tr>
-                        <td>{{ t.testid }}</td>
-                        <td>{{ t.testname }}</td>
-                        <td>{{ t.status_label }}</td>
-                        <td>
-                            <a href="{% url 'task_edit' t.testid %}">Edit</a>
-                            {% if t.status == 2 %}
-                                | <a href="{% url 'task_results' t.testid %}">Results</a>
-                            {% else %}
-                                | <span style="color:#888">Results unavailable</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="4" style="background:#fafafa;">
-                            <details>
-                                <summary><strong>All fields for task #{{ t.testid }}</strong></summary>
-                                <div style="margin-top:8px;">
-                                    {% fields_for t as fields %}
-                                    <table border="1" cellpadding="6">
-                                        <thead>
-                                            <tr>
-                                                <th>Field</th>
-                                                <th>DB column</th>
-                                                <th>Type</th>
-                                                <th>Value</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
+        <div class="tasks-table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    {% for t in tasks %}
+                        <tr>
+                            <td>{{ t.testid }}</td>
+                            <td>{{ t.testname }}</td>
+                            <td><span class="status-badge status-{{ t.status|default:0 }}">{{ t.status_label }}</span></td>
+                            <td>
+                                <a href="{% url 'task_edit' t.testid %}">Edit</a>
+                                {% if t.status == 2 %}<a href="{% url 'task_results' t.testid %}">Results</a>{% else %}<span class="unavailable">Results unavailable</span>{% endif %}
+                            </td>
+                        </tr>
+                        <tr class="collapsible-row">
+                            <td colspan="4">
+                                <details>
+                                    <summary><strong>All fields for task #{{ t.testid }}</strong></summary>
+                                    <div class="details-content">
+                                        <div class="details-grid">
+                                            {% fields_for t as fields %}
                                             {% for f in fields %}
-                                                <tr>
-                                                    <td><code>{{ f.name }}</code></td>
-                                                    <td><code>{{ f.db_column }}</code></td>
-                                                    <td>{{ f.type }}</td>
-                                                    <td>
+                                                <div class="detail-item">
+                                                    <span class="detail-label">{{ f.name }}</span>
+                                                    <span class="detail-value">
                                                         {% with val=t|attr:f.attname %}
-                                                            {% if val is not none %}
-                                                                {{ val }}
-                                                            {% else %}
-                                                                &mdash;
-                                                            {% endif %}
+                                                            {% if val is not none %}{{ val }}{% else %}&mdash;{% endif %}
                                                         {% endwith %}
-                                                    </td>
-                                                </tr>
+                                                    </span>
+                                                </div>
                                             {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </details>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="4">No records</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                                        </div>
+                                    </div>
+                                </details>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" style="text-align: center; padding: 20px;">No tasks found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-        <div>
+        <div class="pagination">
             {% if is_paginated %}
-                {% if page_obj.has_previous %}
-                    <a href="?page={{ page_obj.previous_page_number }}&order={{ request.GET.order }}&limit={{ request.GET.limit }}">Prev</a>
-                {% endif %}
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}&order={{ request.GET.order }}&limit={{ request.GET.limit }}">Next</a>
-                {% endif %}
+                {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&order={{ request.GET.order }}&limit={{ request.GET.limit }}">Prev</a>{% endif %}
+                <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&order={{ request.GET.order }}&limit={{ request.GET.limit }}">Next</a>{% endif %}
             {% endif %}
         </div>
-    </body>
+    </main>
+</body>
 </html>

@@ -1,56 +1,271 @@
 <!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>Edit Task</title>
-    </head>
-    <body>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Task #{{ object.testid }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #f0b90b;
+            --text-color: #e0e0e0;
+            --text-secondary: #888;
+            --border-color: #333;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --danger-color: #dc3545;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+          max-width: 900px;
+          margin: 40px auto;
+          padding: 20px;
+     }
+        h1 {
+          font-size: 2.5rem;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+     }
+        h2 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          margin-bottom: 1.5rem;
+          padding-bottom: 0.75rem;
+          border-bottom: 1px solid var(--border-color);
+     }
+        .header-info {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          margin-bottom: 2rem;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid var(--border-color);
+     }
+        .header-info p {
+          margin: 0;
+          font-size: 1rem;
+          color: var(--text-secondary);
+     }
+
+        .status-badge {
+          display: inline-block;
+          padding: 4px 10px;
+          border-radius: 15px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: var(--bg-color); }
+        .status-badge.status-1 { background-color: var(--warning-color); }
+        .status-badge.status-2 { background-color: var(--success-color); }
+        .status-badge.status-3 { background-color: var(--danger-color); }
+        .status-badge.status-0 { background-color: var(--info-color); }
+
+        .collapsible {
+          background-color: var(--surface-color);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          overflow: hidden;
+          margin-bottom: 2rem;
+     }
+        .collapsible summary {
+          cursor: pointer;
+          padding: 1rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+          list-style: none;
+     }
+        .collapsible summary::-webkit-details-marker {
+          display: none;
+     }
+        .collapsible summary::before {
+          content: '►';
+           margin-right: 0.75rem;
+           display: inline-block;
+           transition: transform 0.2s ease-in-out;
+           }
+        .collapsible[open] > summary::before {
+          transform: rotate(90deg);
+      }
+        .details-content {
+           padding: 1rem;
+           border-top: 1px solid var(--border-color);
+          }
+
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        .detail-item {
+            background: #2f2f2f;
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .detail-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .detail-value {
+            font-size: 0.95rem;
+            color: var(--text-color);
+            word-break: break-all;
+        }
+        .detail-value code {
+             background-color: #444;
+        }
+
+        .form-wrapper {
+          background-color: var(--surface-color);
+          padding: 25px;
+          border-radius: 8px;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+     }
+
+        .form-wrapper p {
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 1rem;
+     }
+        .form-wrapper label {
+          margin-bottom: 6px;
+          font-weight: 600;
+          color: var(--text-secondary);
+     }
+        .form-wrapper input[type="text"],
+        .form-wrapper input[type="number"],
+        .form-wrapper input[type="email"],
+        .form-wrapper textarea,
+        .form-wrapper select {
+            width: 100%;
+            max-width: 500px;
+            background-color: #333;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-wrapper input:focus,
+        .form-wrapper textarea:focus,
+        .form-wrapper select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(240, 185, 11, 0.2);
+        }
+        .form-wrapper textarea {
+          min-height: 120px;
+          resize: vertical;
+     }
+
+        .form-actions {
+          margin-top: 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+     }
+        .btn {
+          padding: 8px 18px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          border-radius: 6px;
+          text-decoration: none;
+          cursor: pointer;
+          border: none;
+          transition: opacity 0.2s;
+     }
+        .btn-primary {
+          background-color: var(--primary-color);
+          color: var(--bg-color);
+     }
+        .btn-secondary {
+          color: var(--text-color);
+          background-color: #444;
+     }
+        .btn:hover {
+          opacity: 0.85;
+     }
+
+        .form-note {
+          margin-top: 1.5rem;
+          color: var(--text-secondary);
+          font-size: 0.9rem;
+     }
+    </style>
+</head>
+<body>
+
+    {% load dict_extras %}
+
+    <main class="container">
         <h1>Edit Task #{{ object.testid }}</h1>
-        <p><strong>Current status:</strong> {{ object.status }}</p>
+        <div class="header-info">
+            <p><strong>Current status:</strong>
+                <span class="status-badge status-{{ object.status|default:0 }}">{{ object.status_label }}</span>
+            </p>
+        </div>
 
-        {% load dict_extras %}
+        <details class="collapsible">
+            <summary>Task Fields</summary>
+            <div class="details-content">
+                <div class="details-grid">
+                    {% fields_for object as fields %}
+                    {% for f in fields %}
+                        <div class="detail-item">
+                            <span class="detail-label">{{ f.name }}</span>
+                            <span class="detail-value">
+                                {% with val=object|attr:f.attname %}
+                                    {% if f.name == 'testname' or f.name == 'underlying' %}
+                                        <code>{{ val|default:"—" }}</code>
+                                    {% else %}
+                                        {{ val|default:"—" }}
+                                    {% endif %}
+                                {% endwith %}
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </details>
 
-        <h2>Task fields (TestsTodo)</h2>
-        {% fields_for object as fields %}
-        <table border="1" cellpadding="6">
-            <thead>
-                <tr>
-                    <th>Field</th>
-                    <th>DB column</th>
-                    <th>Type</th>
-                    <th>Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for f in fields %}
-                    <tr>
-                        <td><code>{{ f.name }}</code></td>
-                        <td><code>{{ f.db_column }}</code></td>
-                        <td>{{ f.type }}</td>
-                        <td>
-                            {% with val=object|attr:f.attname %}
-                                {% if val is not none %}
-                                    {{ val }}
-                                {% else %}
-                                    &mdash;
-                                {% endif %}
-                            {% endwith %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="form-wrapper">
+            <h2>Edit Parameters</h2>
+            <form method="post">
+                {% csrf_token %}
 
-        <h2>Edit</h2>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Save (set status &rarr; pending)</button>
-            <a href="{% url 'task_list' %}">Cancel</a>
-        </form>
+                {{ form.as_p }}
 
-        <p style="color:#666">
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save (set status &rarr; pending)</button>
+                    <a href="{% url 'task_list' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <p class="form-note">
             Saving will remove previous results and change the status to “pending”.
         </p>
-    </body>
+    </main>
+
+</body>
 </html>
