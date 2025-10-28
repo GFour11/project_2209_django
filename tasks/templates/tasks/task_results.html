@@ -1,110 +1,455 @@
-<!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>Task Results</title>
-    </head>
-    <body>
-        <h1>Task Results #{{ task.testid }} &mdash; {{ task.testname }}</h1>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Results #{{ task.testid }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-        {% load dict_extras %}
+    <style>
 
-        <!-- All TestsTodo fields -->
-        <h2>Task fields (TestsTodo)</h2>
-        <table border="1" cellpadding="6">
-            <thead>
-                <tr>
-                    <th>Field</th>
-                    <th>DB column</th>
-                    <th>Type</th>
-                    <th>Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for f in todo_fields %}
-                    <tr>
-                        <td><code>{{ f.name }}</code></td>
-                        <td><code>{{ f.db_column }}</code></td>
-                        <td>{{ f.type }}</td>
-                        <td>
-                            {% if f.value is not none %}
-                                {{ f.value }}
-                            {% else %}
-                                &mdash;
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-color: #f0b90b;
+            --text-color: #e0e0e0;
+            --text-secondary: #888;
+            --border-color: #333;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+        .back-link {
+            margin-top: 2rem;
+        }
+        .back-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .back-link a:hover { opacity: 0.8; }
+
+
+
+        .chart-wrapper {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .chart-header h2 { font-size: 1.5rem; }
+        .total-profit {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+        .total-profit span {
+            font-weight: 600;
+            color: var(--success-color);
+        }
+        .total-profit span.negative-profit {
+            color: var(--danger-color);
+        }
+        .chart-container {
+          display: flex;
+          height: 350px;
+     }
+        .y-axis {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding-right: 15px;
+          text-align: right;
+          font-size: 12px;
+          color: var(--text-secondary);
+     }
+        .chart-area {
+          position: relative;
+          width: 100%;
+          height: 100%; }
+        .x-axis {
+          display: flex;
+          justify-content: space-between;
+          padding-left: 60px;
+          margin-top: 10px;
+          font-size: 12px;
+          color: var(--text-secondary);
+     }
+        #chart-svg {
+          overflow: visible;
+     }
+        #area-fill {
+          fill: url(#area-gradient);
+          opacity: 0.4;
+     }
+        #line-path {
+          fill: none; stroke: var(--primary-color);
+          stroke-width: 2.5;
+          stroke-linejoin: round;
+     }
+        .hover-point {
+          fill: transparent;
+          cursor: crosshair;
+     }
+        .tooltip {
+          position: absolute;
+          background-color: #2a2f3b;
+          padding: 8px 12px;
+          border-radius: 6px;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.2s;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+          border: 1px solid #444;
+          z-index: 10;
+          transform: translate(-50%, -120%);
+     }
+        .tooltip.show {
+          opacity: 1;
+     }
+        .tooltip-date {
+          font-size: 12px;
+          color: #999;
+          margin-bottom: 4px;
+          white-space: nowrap; }
+        .tooltip-value { font-weight: 600; }
+
+
+
+        .details-group {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem; }
+        .collapsible {
+          background-color: var(--surface-color);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          overflow: hidden;
+     }
+        .collapsible summary {
+          cursor: pointer; padding: 1rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+          list-style: none; }
+        .collapsible summary::-webkit-details-marker {
+          display: none;
+     }
+        .collapsible summary::before {
+          content: '►';
+          margin-right: 0.75rem;
+          display: inline-block;
+          transition: transform 0.2s ease-in-out;
+     }
+        .collapsible[open] > summary::before {
+          transform: rotate(90deg);
+     }
+        .details-content {
+          padding: 0 1rem 1rem 1rem;
+          border-top: 1px solid var(--border-color);
+     }
+
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+
+        }
+        thead { background-color: rgba(255, 255, 255, 0.05); }
+        th {
+          font-weight: 600;
+          color: var(--text-secondary);
+     }
+        code {
+          background-color: #333;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-family: 'Courier New', Courier, monospace;
+     }
+
+
+        .table-responsive-wrapper {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+
+
+    </style>
+</head>
+<body>
+
+    {% load dict_extras %}
+
+    <main class="container">
+        <h1>Task Results #{{ task.testid }}</h1>
+        <p class="subtitle">{{ task.testname }}</p>
 
         {% if trade_result %}
-            <!-- All TradeResult fields -->
-            <h2>Result fields (TradeResult)</h2>
-            {% fields_for trade_result as tr_fields %}
-            <table border="1" cellpadding="6">
-                <thead>
-                    <tr>
-                        <th>Field</th>
-                        <th>DB column</th>
-                        <th>Type</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for f in tr_fields %}
-                        <tr>
-                            <td><code>{{ f.name }}</code></td>
-                            <td><code>{{ f.db_column }}</code></td>
-                            <td>{{ f.type }}</td>
-                            <td>
-                                {% with val=trade_result|attr:f.attname %}
-                                    {% if val is not none %}
-                                        {{ val }}
-                                    {% else %}
-                                        &mdash;
-                                    {% endif %}
-                                {% endwith %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="chart-wrapper">
+                <div class="chart-header">
+                    <h2>Balance Dinamics</h2>
+                    <p class="total-profit">
+                        Total Profit:
+                        <span {% if trade_result.profit < 0 %}class="negative-profit"{% endif %}>
+                            {{ trade_result.profit|floatformat:2 }}
+                        </span>
+                    </p>
+                </div>
+                <div class="chart-container">
+                    <div class="y-axis">
+                        <span id="y-max"></span><span id="y-75"></span><span id="y-50"></span><span id="y-25"></span><span>0</span>
+                    </div>
+                    <div class="chart-area">
+                        <svg id="chart-svg" width="100%" height="100%"></svg>
+                        <div id="tooltip" class="tooltip">
+                            <div id="tooltip-date"></div>
+                            <div id="tooltip-value"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="x-axis" class="x-axis"></div>
+            </div>
 
-            <!-- Daily performance -->
-            <h3>Daily Performance</h3>
-            <table border="1" cellpadding="6">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>P/L</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for d in daily_profits %}
-                        <tr>
-                            <td>{{ d.date }}</td>
-                            <td>
-                                {% if d.profitloss is not none %}
-                                    {{ d.profitloss|floatformat:2 }}
-                                {% elif d.pl_derived is not none %}
-                                    ~{{ d.pl_derived|floatformat:2 }}
-                                {% else %}
-                                    &mdash;
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="2">No records</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="details-group">
+                <details class="collapsible">
+                    <summary>Daily Performance Details</summary>
+                    <div class="details-content">
+                        <div class="table-responsive-wrapper">
+                            <table>
+                                <thead><tr><th>Date</th><th>P/L</th></tr></thead>
+                                <tbody>
+                                    {% for d in daily_profits %}
+                                        <tr>
+                                            <td>{{ d.date }}</td>
+                                            <td>
+                                                {% if d.profitloss is not none %}{{ d.profitloss|floatformat:2 }}{% elif d.pl_derived is not none %}~{{ d.pl_derived|floatformat:2 }}{% else %}&mdash;{% endif %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}<tr><td colspan="2">No records</td></tr>{% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </details>
+                <details class="collapsible">
+                    <summary>Result Fields</summary>
+                    <div class="details-content">
+                        <div class="table-responsive-wrapper">
+                            {% fields_for trade_result as tr_fields %}
+                            <table>
+                                <thead><tr><th>Field</th><th>DB column</th><th>Type</th><th>Value</th></tr></thead>
+                                <tbody>
+                                    {% for f in tr_fields %}
+                                        <tr>
+                                            <td><code>{{ f.name }}</code></td><td><code>{{ f.db_column }}</code></td><td>{{ f.type }}</td>
+                                            <td>{% with val=trade_result|attr:f.attname %}{% if val is not none %}{{ val }}{% else %}&mdash;{% endif %}{% endwith %}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </details>
+                <!-- <details class="collapsible">
+                    <summary>Task Fields (TestsTodo)</summary>
+                    <div class="details-content">
+                        <div class="table-responsive-wrapper">
+                            <table>
+                                <thead><tr><th>Field</th><th>DB column</th><th>Type</th><th>Value</th></tr></thead>
+                                <tbody>
+                                    {% for f in todo_fields %}
+                                        <tr>
+                                            <td><code>{{ f.name }}</code></td><td><code>{{ f.db_column }}</code></td><td>{{ f.type }}</td>
+                                            <td>{% if f.value is not none %}{{ f.value }}{% else %}&mdash;{% endif %}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </details> -->
+            </div>
         {% else %}
-            <p>No results found.</p>
+            <p class="no-results">No results found.</p>
         {% endif %}
 
-        <p><a href="{% url 'task_list' %}">&larr; Back to list</a></p>
-    </body>
+        <p class="back-link"><a href="{% url 'task_list' %}">&larr; Back to list</a></p>
+    </main>
+
+    {{ daily_profits|json_script:"daily-profits-data" }}
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const dailyProfitsRawElement = document.getElementById('daily-profits-data');
+            if (!dailyProfitsRawElement) {
+                console.error("Элемент с данными 'daily-profits-data' не найден!");
+                return;
+            }
+            const dailyProfitsRaw = JSON.parse(dailyProfitsRawElement.textContent);
+            let cumulativeBalance = 0.0;
+            const chartData = dailyProfitsRaw.map(dailyStat => {
+                let dailyPl = 0.0;
+                if (dailyStat.profitloss !== null && dailyStat.profitloss !== undefined) {
+                    dailyPl = parseFloat(dailyStat.profitloss);
+                } else if (dailyStat.pl_derived !== null && dailyStat.pl_derived !== undefined) {
+                    dailyPl = parseFloat(dailyStat.pl_derived);
+                }
+                cumulativeBalance += dailyPl;
+                const dateObj = new Date(dailyStat.date);
+                const day = ('0' + dateObj.getDate()).slice(-2);
+                const month = ('0' + (dateObj.getMonth() + 1)).slice(-2);
+                const year = dateObj.getFullYear();
+                const formattedDate = `${day}.${month}.${year}`;
+                return { date: formattedDate, value: cumulativeBalance };
+            });
+
+            if (chartData.length === 0) {
+                const chartWrapper = document.querySelector('.chart-wrapper');
+                if (chartWrapper) chartWrapper.style.display = 'none';
+                return;
+            }
+
+            function renderChart() {
+                const svg = document.getElementById('chart-svg');
+                const tooltip = document.getElementById('tooltip');
+                svg.innerHTML = '<g id="grid-lines"></g><polygon id="area-fill" /><path id="line-path" /><g id="points-group"></g>';
+                const areaFill = document.getElementById('area-fill'),
+                      linePath = document.getElementById('line-path'),
+                      pointsGroup = document.getElementById('points-group'),
+                      gridLines = document.getElementById('grid-lines');
+                const svgBounds = svg.getBoundingClientRect();
+                const chartWidth = svgBounds.width,
+                      chartHeight = svgBounds.height;
+                if (chartWidth === 0) return;
+                const values = chartData.map(d => d.value);
+                const minValue = Math.min(...values, 0),
+                      maxValue = Math.max(...values, 0);
+                const range = maxValue - minValue;
+                const yMax = (range === 0) ? maxValue + 10 : maxValue + range * 0.05,
+                      yMin = (range === 0) ? minValue - 10 : minValue - range * 0.05;
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                gradient.id = 'area-gradient';
+                gradient.innerHTML = `<stop offset="0%" stop-color="#f0b90b" stop-opacity="0.6"/><stop offset="100%" stop-color="#f0b90b" stop-opacity="0"/>`;
+                defs.appendChild(gradient);
+                svg.prepend(defs);
+                updateYAxis(yMin, yMax);
+                drawGrid(chartWidth, chartHeight, gridLines);
+                drawXAxis(chartData);
+                const points = chartData.map((dataPoint, index) => {
+                    const x = (chartData.length > 1) ? (index / (chartData.length - 1)) * chartWidth : chartWidth / 2;
+                    const y = (yMax - yMin === 0) ? chartHeight / 2 : chartHeight - ((dataPoint.value - yMin) / (yMax - yMin)) * chartHeight;
+                    return { x, y };
+                });
+                const pathD = "M" + points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" L");
+                const areaPoints = `${points[0].x.toFixed(2)},${chartHeight} ` + points.map(p => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" ") + ` ${points[points.length-1].x.toFixed(2)},${chartHeight}`;
+                if (points.length > 1) {
+                    linePath.setAttribute('d', pathD);
+                    areaFill.setAttribute('points', areaPoints);
+                }
+                points.forEach((point, index) => {
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('class', 'hover-point');
+                    circle.setAttribute('cx', point.x);
+                    circle.setAttribute('cy', point.y);
+                    circle.setAttribute('r', '10');
+                    circle.addEventListener('mouseover', () => {
+                        tooltip.classList.add('show');
+                        tooltip.style.left = `${point.x}px`;
+                        tooltip.style.top = `${point.y}px`;
+                        tooltip.querySelector('#tooltip-date').textContent = chartData[index].date;
+                        tooltip.querySelector('#tooltip-value').textContent = `${chartData[index].value.toFixed(2)}`;
+                    });
+                    circle.addEventListener('mouseout', () => tooltip.classList.remove('show'));
+                    pointsGroup.appendChild(circle);
+                });
+            }
+            function updateYAxis(min, max) {
+                document.getElementById('y-max').textContent = `${max.toFixed(0)}`;
+                document.getElementById('y-75').textContent = `${(min + (max - min) * 0.75).toFixed(0)}`;
+                document.getElementById('y-50').textContent = `${(min + (max - min) * 0.5).toFixed(0)}`;
+                document.getElementById('y-25').textContent = `${(min + (max - min) * 0.25).toFixed(0)}`;
+                document.querySelector('.y-axis span:last-child').textContent = `${min.toFixed(0)}`;
+            }
+            function drawGrid(width, height, container) {
+                container.innerHTML = '';
+                for (let i = 1; i < 4; i++) {
+                    const y = height - (i/4 * height);
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', '0'); line.setAttribute('x2', width);
+                    line.setAttribute('y1', y); line.setAttribute('y2', y);
+                    line.style.stroke = 'var(--border-color)';
+                    line.style.strokeDasharray = '4 4';
+                    container.appendChild(line);
+                }
+            }
+            function drawXAxis(data) {
+                const xAxisContainer = document.getElementById('x-axis');
+                xAxisContainer.innerHTML = '';
+                const maxLabels = Math.floor(xAxisContainer.parentElement.clientWidth / 100);
+                const dataCount = data.length;
+                if (dataCount < 1) return;
+                const step = Math.max(1, Math.floor((dataCount -1) / (maxLabels - 1)));
+                let lastAddedIndex = -1;
+                for (let i = 0; i < dataCount; i += step) {
+                    const span = document.createElement('span');
+                    span.textContent = data[i].date.substring(0, 5);
+                    xAxisContainer.appendChild(span);
+                    lastAddedIndex = i;
+                }
+                if (lastAddedIndex < dataCount - 1) {
+                    const lastSpan = document.createElement('span');
+                    lastSpan.textContent = data[dataCount - 1].date.substring(0, 5);
+                    xAxisContainer.appendChild(lastSpan);
+                }
+            }
+            renderChart();
+            window.addEventListener('resize', renderChart);
+        });
+    </script>
+</body>
 </html>
